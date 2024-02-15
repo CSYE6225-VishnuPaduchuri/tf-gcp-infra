@@ -28,5 +28,5 @@ resource "google_compute_route" "webapp_subnet_route" {
   name             = var.webapp_subnet_route_name
   dest_range       = var.webapp_subnet_route_dest_range
   next_hop_gateway = var.webapp_subnet_route_next_hop_gateway
-  priority         = var.webapp_subnet_route_prioritys
+  priority         = var.webapp_subnet_route_priority
 }
