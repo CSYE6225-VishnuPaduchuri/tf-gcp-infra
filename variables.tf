@@ -36,3 +36,23 @@ variable "vpc_delete_default_routes_on_create" {
     description="Delete default routes on create"
     type=bool
 }
+
+variable "webapp_subnet_name"{
+    description="The name of the webapp subnet"
+    type=string
+}
+
+variable "webapp_subnet_ip_cidr_range" {
+    description="The IP CIDR range of the webapp subnet"
+    type=string
+}
+
+variable "db_subnet_name"{
+    description="The name of the DB subnet"
+    type=string
+}
+
+variable "db_subnet_ip_cidr_range" {
+    description="The IP CIDR range of the DB subnet"
+    type=string
+}
