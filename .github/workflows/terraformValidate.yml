@@ -1,0 +1,26 @@
+name: CI to test terraform validate
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: terraform-validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.7.0
+
+      - run: terraform init
+
+      - name: Format Terraform Configuration
+        run: terraform fmt
+
+      - name: Validate Terraform Configuration
+        run: terraform validate
