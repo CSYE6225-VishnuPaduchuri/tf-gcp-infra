@@ -56,3 +56,23 @@ variable "db_subnet_ip_cidr_range" {
     description="The IP CIDR range of the DB subnet"
     type=string
 }
+
+variable "webapp_subnet_route_name" {
+    description="The name given to the webapp subnet route"
+    type=string
+}
+
+variable "webapp_subnet_route_dest_range" {
+    description="The destination range for the webapp subnet route"
+    type=string
+}
+
+variable "webapp_subnet_route_next_hop_gateway" {
+    description="The next hop gateway for the webapp subnet route"
+    type=string
+}
+
+variable "webapp_subnet_route_priority" {
+    description="Delete default routes on create"
+    type=number
+}
