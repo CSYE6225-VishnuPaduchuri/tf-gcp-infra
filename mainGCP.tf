@@ -22,3 +22,11 @@ resource "google_compute_subnetwork" "db" {
   ip_cidr_range = var.db_subnet_ip_cidr_range
   network = google_compute_network.vpc.self_link
 }
+
+resource "google_compute_route" "webapp_subnet_route" {
+  network = google_compute_network.vpc.self_link
+  name = var.webapp_subnet_route_name
+  dest_range = var.webapp_subnet_route_dest_range
+  next_hop_gateway = var.webapp_subnet_route_next_hop_gateway
+  priority = var.webapp_subnet_route_priority
+}
