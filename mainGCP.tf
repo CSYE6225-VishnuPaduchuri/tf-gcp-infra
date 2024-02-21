@@ -30,3 +30,38 @@ resource "google_compute_route" "webapp_subnet_route" {
   next_hop_gateway = var.webapp_subnet_route_next_hop_gateway
   priority         = var.webapp_subnet_route_priority
 }
+
+resource "google_compute_firewall" "webapp_firewall" {
+  name    = var.gcp_firwall_name
+  network = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = var.gcp_firewall_allowed_protocol
+    ports    = var.gcp_firewall_ports
+  }
+
+  source_ranges = var.gcp_firewall_source_ranges
+  target_tags   = var.gcp_firewall_target_tags
+}
+
+resource "google_compute_instance" "webapp_vm_instance" {
+  name         = var.instance_name_of_webapp
+  machine_type = var.instance_machine_type
+  zone         = var.instance_zone
+
+  boot_disk {
+    initialize_params {
+      image = var.instance_image_from_packer
+    }
+  }
+
+  network_interface {
+    network    = google_compute_network.vpc.self_link
+    subnetwork = google_compute_subnetwork.webapp.self_link
+    access_config {}
+  }
+
+  tags       = var.gcp_firewall_target_tags
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall]
+
+}

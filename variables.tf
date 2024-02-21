@@ -76,3 +76,48 @@ variable "webapp_subnet_route_priority" {
   description = "Delete default routes on create"
   type        = number
 }
+
+variable "instance_machine_type" {
+  description = "The machine type for the instance"
+  type        = string
+}
+
+variable "instance_zone" {
+  description = "The zone where the instance will be created"
+  type        = string
+}
+
+variable "instance_image_from_packer" {
+  description = "The image genereated from packer that will be used in the instance"
+  type        = string
+}
+
+variable "gcp_firwall_name" {
+  description = "The name given to the firewall"
+  type        = string
+}
+
+variable "gcp_firewall_target_tags" {
+  description = "The firewall target tags"
+  type        = list(string)
+}
+
+variable "gcp_firewall_ports" {
+  description = "The firewall ports"
+  type        = list(string)
+}
+
+variable "gcp_firewall_source_ranges" {
+  description = "The firewall source ranges"
+  type        = list(string)
+}
+
+variable "gcp_firewall_allowed_protocol" {
+  description = "The protocols allowed via the firewall"
+  type        = string
+}
+
+variable "instance_name_of_webapp" {
+  description = "The name given to the GCP VM"
+  type        = string
+}
