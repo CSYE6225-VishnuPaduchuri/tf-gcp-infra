@@ -121,3 +121,13 @@ variable "instance_name_of_webapp" {
   description = "The name given to the GCP VM"
   type        = string
 }
+
+variable "instance_image_type" {
+  description = "The type of the image"
+  type        = string
+}
+
+variable "instance_image_disk_size" {
+  description = "The size of the image disk size"
+  type        = number
+}
