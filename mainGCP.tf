@@ -52,6 +52,8 @@ resource "google_compute_instance" "webapp_vm_instance" {
   boot_disk {
     initialize_params {
       image = var.instance_image_from_packer
+      type  = var.instance_image_type
+      size  = var.instance_image_disk_size
     }
   }
 
