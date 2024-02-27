@@ -97,11 +97,6 @@ variable "gcp_firwall_name" {
   type        = string
 }
 
-variable "gcp_firewall_target_tags" {
-  description = "The firewall target tags"
-  type        = list(string)
-}
-
 variable "gcp_firewall_ports" {
   description = "The firewall ports"
   type        = list(string)
@@ -130,4 +125,41 @@ variable "instance_image_type" {
 variable "instance_image_disk_size" {
   description = "The size of the image disk size"
   type        = number
+}
+
+// Priority range starts from 0, and the less the number the higher the priority
+variable "gcp_firewall_priority" {
+  description = "The priority of the firewall"
+  type        = number
+}
+
+
+variable "gcp_deny_firewall_name" {
+  description = "The name given to the deny firewall"
+  type        = string
+}
+
+variable "gcp_deny_firewall_ports" {
+  description = "The deny firewall ports"
+  type        = list(string)
+}
+
+variable "gcp_deny_firewall_source_ranges" {
+  description = "The deny firewall source ranges"
+  type        = list(string)
+}
+
+variable "gcp_deny_firewall_allowed_protocol" {
+  description = "The protocols denied by the firewall"
+  type        = string
+}
+
+variable "instance_boot_disk_auto_delete" {
+  description = "This indicates if the boot disk should be deleted when we run terrafom destroy"
+  type        = bool
+}
+
+variable "vm_firewall_target_tags" {
+  description = "The target tags for the VM firewall"
+  type        = list(string)
 }

@@ -41,7 +41,21 @@ resource "google_compute_firewall" "webapp_firewall" {
   }
 
   source_ranges = var.gcp_firewall_source_ranges
-  target_tags   = var.gcp_firewall_target_tags
+  target_tags   = var.vm_firewall_target_tags
+  priority      = var.gcp_firewall_priority
+}
+
+resource "google_compute_firewall" "webapp_deny_firewall" {
+  name    = var.gcp_deny_firewall_name
+  network = google_compute_network.vpc.self_link
+
+  deny {
+    protocol = var.gcp_deny_firewall_allowed_protocol
+    ports    = var.gcp_deny_firewall_ports
+  }
+
+  source_ranges = var.gcp_deny_firewall_source_ranges
+  target_tags   = var.vm_firewall_target_tags
 }
 
 resource "google_compute_instance" "webapp_vm_instance" {
@@ -55,6 +69,7 @@ resource "google_compute_instance" "webapp_vm_instance" {
       type  = var.instance_image_type
       size  = var.instance_image_disk_size
     }
+    auto_delete = var.instance_boot_disk_auto_delete
   }
 
   network_interface {
@@ -63,7 +78,7 @@ resource "google_compute_instance" "webapp_vm_instance" {
     access_config {}
   }
 
-  tags       = var.gcp_firewall_target_tags
+  tags       = var.vm_firewall_target_tags
   depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall]
 
 }
