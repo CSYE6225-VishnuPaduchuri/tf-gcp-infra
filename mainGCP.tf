@@ -43,12 +43,43 @@ resource "google_compute_global_address" "app_global_address" {
   depends_on    = [google_compute_network.vpc]
 }
 
+# Reference taken from https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
+# and https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_networking_connection
+
 resource "google_service_networking_connection" "private_connection_for_vpc" {
   network                 = google_compute_network.vpc.self_link
   service                 = var.google_service_networking_connection_service_name
   reserved_peering_ranges = [google_compute_global_address.app_global_address.name]
   deletion_policy         = var.google_service_networking_connection_deletion_policy
   depends_on              = [google_compute_global_address.app_global_address]
+}
+
+resource "random_id" "suffix_for_db_instance" {
+  byte_length = var.random_id_suffix_for_db_instance_byte_length
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database_instance
+# and https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
+
+resource "google_sql_database_instance" "postgres_db" {
+  name                = "postgres-db-instance-${random_id.suffix_for_db_instance.hex}"
+  project             = var.gcp_project_id
+  region              = var.gcp_project_region
+  database_version    = var.google_sql_database_instance_database_version
+  deletion_protection = var.google_sql_database_instance_deletion_policy
+  depends_on = [google_service_networking_connection.private_connection_for_vpc]
+
+  settings {
+    tier = var.google_sql_database_instance_tier
+    availability_type = var.google_sql_database_instance_availability_type
+    disk_type = var.google_sql_database_instance_disk_type
+    disk_size = var.google_sql_database_instance_disk_size
+    ip_configuration {
+      ipv4_enabled                                  = var.google_sql_database_instance_ipv4_enabled
+      private_network                               = google_compute_network.vpc.id
+      enable_private_path_for_google_cloud_services = var.google_sql_database_instance_private_path_for_GCP_services
+    }
+  }
 }
 resource "google_compute_firewall" "webapp_firewall" {
   name    = var.gcp_firwall_name
