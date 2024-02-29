@@ -188,3 +188,13 @@ variable "global_address_prefix_length" {
   description = "The prefix length of the global address"
   type        = number
 }
+
+variable "google_service_networking_connection_service_name" {
+  description = "The name of the google service networking connection"
+  type        = string
+}
+
+variable "google_service_networking_connection_deletion_policy" {
+  description = "The deletion policy for the google service networking connection"
+  type        = string
+}
