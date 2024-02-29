@@ -153,6 +153,47 @@ resource "google_compute_instance" "webapp_vm_instance" {
   }
 
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db]
+
+# In the startup script, i am adding check to see if ENV file path exists or not
+# If it doesnt no exists, then creating the env file and adding the environment variables
+# If file exists, then im updating the environment variables to the latest values
+  metadata = {
+    startup-script = <<-EOT
+#!/bin/bash
+
+set -e
+
+ENV_FILE="/opt/csye6225/webapp/.env"
+SERVER_PORT=8080
+DATABASE_NAME=${google_sql_database.database.name}
+DATABASE_USER_NAME=${google_sql_user.users.name}
+DATABASE_PASSWORD=${google_sql_user.users.password}
+DATABASE_HOST_URL=${google_sql_database_instance.postgres_db.private_ip_address}
+
+if [ -f "$ENV_FILE"  ]; then
+    echo "Env file exists."
+    sudo sed -i "s/^SERVER_PORT=.*/SERVER_PORT=$SERVER_PORT/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_NAME=.*/DATABASE_NAME=$DATABASE_NAME/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_USER_NAME=.*/DATABASE_USER_NAME=$DATABASE_USER_NAME/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=$DATABASE_PASSWORD/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_HOST_URL=.*/DATABASE_HOST_URL=$DATABASE_HOST_URL/" "$ENV_FILE"
+else
+    echo "File does not exist."
+    sudo sh -c "echo 'SERVER_PORT=$SERVER_PORT' > $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_NAME=$DATABASE_NAME' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_USER_NAME=$DATABASE_USER_NAME' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_PASSWORD=$DATABASE_PASSWORD' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_HOST_URL=$DATABASE_HOST_URL' >> $ENV_FILE"
+fi
+
+sudo systemctl daemon-reload
+sudo systemctl stop webapp
+sudo systemctl start webapp
+
+echo "Test=Working" >> /tmp/.testEnv
+
+EOT
+  }
 
 }
