@@ -40,9 +40,16 @@ resource "google_compute_global_address" "app_global_address" {
   purpose       = var.global_address_purpose
   network       = google_compute_network.vpc.self_link
   prefix_length = var.global_address_prefix_length
-  depends_on = [google_compute_network.vpc]
+  depends_on    = [google_compute_network.vpc]
 }
 
+resource "google_service_networking_connection" "private_connection_for_vpc" {
+  network                 = google_compute_network.vpc.self_link
+  service                 = var.google_service_networking_connection_service_name
+  reserved_peering_ranges = [google_compute_global_address.app_global_address.name]
+  deletion_policy         = var.google_service_networking_connection_deletion_policy
+  depends_on              = [google_compute_global_address.app_global_address]
+}
 resource "google_compute_firewall" "webapp_firewall" {
   name    = var.gcp_firwall_name
   network = google_compute_network.vpc.self_link
