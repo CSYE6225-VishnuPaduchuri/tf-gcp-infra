@@ -198,3 +198,48 @@ variable "google_service_networking_connection_deletion_policy" {
   description = "The deletion policy for the google service networking connection"
   type        = string
 }
+
+variable "random_id_suffix_for_db_instance_byte_length" {
+  description = "The byte length for the random id suffix for the DB instance"
+  type        = number
+}
+
+variable "google_sql_database_instance_database_version" {
+  description = "The database version for the DB type we select such as POSTGRES_15"
+  type        = string
+}
+
+variable "google_sql_database_instance_deletion_policy" {
+  description = "The deletion policy set for the DB instance"
+  type        = bool
+}
+
+variable "google_sql_database_instance_tier" {
+  description = "The tier set for the DB instance"
+  type        = string
+}
+
+variable "google_sql_database_instance_availability_type" {
+  description = "The availability type set for the DB instance"
+  type        = string
+}
+
+variable "google_sql_database_instance_disk_type" {
+  description = "The disk type used for the DB instance"
+  type        = string
+}
+
+variable "google_sql_database_instance_disk_size" {
+  description = "The disk size used for the DB instance"
+  type        = number
+}
+
+variable "google_sql_database_instance_ipv4_enabled" {
+  description = "This tells if ipv4 is enabled or not for the DB instance"
+  type        = bool
+}
+
+variable "google_sql_database_instance_private_path_for_GCP_services" {
+  description = "This tells if private path for GCP services is enabled or not for the DB instance"
+  type        = bool
+}
