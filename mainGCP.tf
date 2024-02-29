@@ -54,6 +54,7 @@ resource "google_service_networking_connection" "private_connection_for_vpc" {
   depends_on              = [google_compute_global_address.app_global_address]
 }
 
+# Refernece for random_id taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user
 resource "random_id" "suffix_for_db_instance" {
   byte_length = var.random_id_suffix_for_db_instance_byte_length
 }
@@ -67,13 +68,13 @@ resource "google_sql_database_instance" "postgres_db" {
   region              = var.gcp_project_region
   database_version    = var.google_sql_database_instance_database_version
   deletion_protection = var.google_sql_database_instance_deletion_policy
-  depends_on = [google_service_networking_connection.private_connection_for_vpc]
+  depends_on          = [google_service_networking_connection.private_connection_for_vpc]
 
   settings {
-    tier = var.google_sql_database_instance_tier
+    tier              = var.google_sql_database_instance_tier
     availability_type = var.google_sql_database_instance_availability_type
-    disk_type = var.google_sql_database_instance_disk_type
-    disk_size = var.google_sql_database_instance_disk_size
+    disk_type         = var.google_sql_database_instance_disk_type
+    disk_size         = var.google_sql_database_instance_disk_size
     ip_configuration {
       ipv4_enabled                                  = var.google_sql_database_instance_ipv4_enabled
       private_network                               = google_compute_network.vpc.id
@@ -81,6 +82,29 @@ resource "google_sql_database_instance" "postgres_db" {
     }
   }
 }
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_database
+resource "google_sql_database" "database" {
+  name       = var.google_sql_database_name
+  instance   = google_sql_database_instance.postgres_db.name
+  depends_on = [google_sql_database_instance.postgres_db]
+}
+
+# Reference taken https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password
+resource "random_password" "db_password" {
+  length           = var.random_password_length
+  override_special = var.random_password_override_special
+  special          = var.random_password_special
+}
+
+# Reference taken from https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
+resource "google_sql_user" "users" {
+  name     = var.google_sql_user_name
+  instance = google_sql_database_instance.postgres_db.name
+  password = random_password.db_password.result
+}
+
+# Reference from https://medium.com/google-cloud/terraform-on-google-cloud-v1-1-deploying-vm-with-github-actions-446bc1061420
 resource "google_compute_firewall" "webapp_firewall" {
   name    = var.gcp_firwall_name
   network = google_compute_network.vpc.self_link
