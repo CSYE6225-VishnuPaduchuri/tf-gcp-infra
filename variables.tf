@@ -243,3 +243,28 @@ variable "google_sql_database_instance_private_path_for_GCP_services" {
   description = "This tells if private path for GCP services is enabled or not for the DB instance"
   type        = bool
 }
+
+variable "google_sql_database_name" {
+  description = "The name set for the Database"
+  type        = string
+}
+
+variable "random_password_length" {
+  description = "The length of the random password that we will use for the DB user"
+  type        = number
+}
+
+variable "random_password_override_special" {
+  description = "The special characters that we will use for the random password"
+  type        = string
+}
+
+variable "random_password_special" {
+  description = "This tells if special characters are allowed in the random password"
+  type        = bool
+}
+
+variable "google_sql_user_name" {
+  description = "The name of the user for the DB"
+  type        = string
+}
