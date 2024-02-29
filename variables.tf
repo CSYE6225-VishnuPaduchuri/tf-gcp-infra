@@ -163,3 +163,28 @@ variable "vm_firewall_target_tags" {
   description = "The target tags for the VM firewall"
   type        = list(string)
 }
+
+variable "subnet_private_ip_google_access" {
+  description = "This indicates if the VPC is private and can communicate with google services through private IP"
+  type        = bool
+}
+
+variable "global_address_name" {
+  description = "The name given to the global address"
+  type        = string
+}
+
+variable "global_address_type" {
+  description = "The type of the global address"
+  type        = string
+}
+
+variable "global_address_purpose" {
+  description = "The purpose of the global address"
+  type        = string
+}
+
+variable "global_address_prefix_length" {
+  description = "The prefix length of the global address"
+  type        = number
+}

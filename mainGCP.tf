@@ -12,15 +12,17 @@ resource "google_compute_network" "vpc" {
 }
 
 resource "google_compute_subnetwork" "webapp" {
-  name          = var.webapp_subnet_name
-  ip_cidr_range = var.webapp_subnet_ip_cidr_range
-  network       = google_compute_network.vpc.self_link
+  name                     = var.webapp_subnet_name
+  ip_cidr_range            = var.webapp_subnet_ip_cidr_range
+  network                  = google_compute_network.vpc.self_link
+  private_ip_google_access = var.subnet_private_ip_google_access
 }
 
 resource "google_compute_subnetwork" "db" {
-  name          = var.db_subnet_name
-  ip_cidr_range = var.db_subnet_ip_cidr_range
-  network       = google_compute_network.vpc.self_link
+  name                     = var.db_subnet_name
+  ip_cidr_range            = var.db_subnet_ip_cidr_range
+  network                  = google_compute_network.vpc.self_link
+  private_ip_google_access = var.subnet_private_ip_google_access
 }
 
 resource "google_compute_route" "webapp_subnet_route" {
@@ -29,6 +31,16 @@ resource "google_compute_route" "webapp_subnet_route" {
   dest_range       = var.webapp_subnet_route_dest_range
   next_hop_gateway = var.webapp_subnet_route_next_hop_gateway
   priority         = var.webapp_subnet_route_priority
+}
+
+# Refrence taken from https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
+resource "google_compute_global_address" "app_global_address" {
+  name          = var.global_address_name
+  address_type  = var.global_address_type
+  purpose       = var.global_address_purpose
+  network       = google_compute_network.vpc.self_link
+  prefix_length = var.global_address_prefix_length
+  depends_on = [google_compute_network.vpc]
 }
 
 resource "google_compute_firewall" "webapp_firewall" {
