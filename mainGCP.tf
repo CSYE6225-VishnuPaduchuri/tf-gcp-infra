@@ -16,6 +16,7 @@ resource "google_compute_subnetwork" "webapp" {
   ip_cidr_range            = var.webapp_subnet_ip_cidr_range
   network                  = google_compute_network.vpc.self_link
   private_ip_google_access = var.subnet_private_ip_google_access
+  depends_on               = [google_compute_network.vpc]
 }
 
 resource "google_compute_subnetwork" "db" {
@@ -23,6 +24,7 @@ resource "google_compute_subnetwork" "db" {
   ip_cidr_range            = var.db_subnet_ip_cidr_range
   network                  = google_compute_network.vpc.self_link
   private_ip_google_access = var.subnet_private_ip_google_access
+  depends_on               = [google_compute_network.vpc]
 }
 
 resource "google_compute_route" "webapp_subnet_route" {
@@ -31,6 +33,7 @@ resource "google_compute_route" "webapp_subnet_route" {
   dest_range       = var.webapp_subnet_route_dest_range
   next_hop_gateway = var.webapp_subnet_route_next_hop_gateway
   priority         = var.webapp_subnet_route_priority
+  depends_on       = [google_compute_network.vpc]
 }
 
 # Refrence taken from https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
@@ -99,9 +102,10 @@ resource "random_password" "db_password" {
 
 # Reference taken from https://medium.com/google-cloud/terraform-on-google-cloud-v1-2-deploying-postgresql-with-github-actions-e7009cb04d22
 resource "google_sql_user" "users" {
-  name     = var.google_sql_user_name
-  instance = google_sql_database_instance.postgres_db.name
-  password = random_password.db_password.result
+  name       = var.google_sql_user_name
+  instance   = google_sql_database_instance.postgres_db.name
+  password   = random_password.db_password.result
+  depends_on = [google_sql_database_instance.postgres_db, random_password.db_password]
 }
 
 # Reference from https://medium.com/google-cloud/terraform-on-google-cloud-v1-1-deploying-vm-with-github-actions-446bc1061420
@@ -117,6 +121,7 @@ resource "google_compute_firewall" "webapp_firewall" {
   source_ranges = var.gcp_firewall_source_ranges
   target_tags   = var.vm_firewall_target_tags
   priority      = var.gcp_firewall_priority
+  depends_on    = [google_compute_network.vpc]
 }
 
 resource "google_compute_firewall" "webapp_deny_firewall" {
@@ -130,6 +135,7 @@ resource "google_compute_firewall" "webapp_deny_firewall" {
 
   source_ranges = var.gcp_deny_firewall_source_ranges
   target_tags   = var.vm_firewall_target_tags
+  depends_on    = [google_compute_network.vpc]
 }
 
 resource "google_compute_instance" "webapp_vm_instance" {
@@ -153,11 +159,11 @@ resource "google_compute_instance" "webapp_vm_instance" {
   }
 
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users]
 
-# In the startup script, i am adding check to see if ENV file path exists or not
-# If it doesnt no exists, then creating the env file and adding the environment variables
-# If file exists, then im updating the environment variables to the latest values
+  # In the startup script, i am adding check to see if ENV file path exists or not
+  # If it doesnt no exists, then creating the env file and adding the environment variables
+  # If file exists, then im updating the environment variables to the latest values
   metadata = {
     startup-script = <<-EOT
 #!/bin/bash
