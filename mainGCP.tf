@@ -203,3 +203,14 @@ EOT
   }
 
 }
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
+resource "google_dns_record_set" "webapp_dns" {
+  name         = var.webapp_domain_name
+  type         = var.webapp_domain_type
+  ttl          = var.webapp_domain_ttl
+  managed_zone = var.webapp_domain_managed_zone
+
+  rrdatas = [google_compute_instance.webapp_vm_instance.network_interface[0].access_config[0].nat_ip]
+}
+
