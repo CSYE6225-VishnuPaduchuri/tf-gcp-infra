@@ -268,3 +268,23 @@ variable "google_sql_user_name" {
   description = "The name of the user for the DB"
   type        = string
 }
+
+variable "webapp_domain_name" {
+  description = "The domain name that we will use for webapp"
+  type        = string
+}
+
+variable "webapp_domain_type" {
+  description = "The type of the domain"
+  type        = string
+}
+
+variable "webapp_domain_ttl" {
+  description = "The time to live for the domain"
+  type        = number
+}
+
+variable "webapp_domain_managed_zone" {
+  description = "The managed zone for the domain"
+  type        = string
+}
