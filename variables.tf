@@ -303,3 +303,8 @@ variable "service_account_create_ignore_already_exists" {
   description = "The boolean value to ignore already exists"
   type        = bool
 }
+
+variable "logging_service_role" {
+  description = "The role for the logging service"
+  type        = string
+}
