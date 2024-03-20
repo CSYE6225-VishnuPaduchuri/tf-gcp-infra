@@ -144,6 +144,18 @@ resource "google_service_account" "service_account" {
   display_name                 = var.service_account_display_name
   create_ignore_already_exists = var.service_account_create_ignore_already_exists
 }
+
+# Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam#google_project_iam_binding
+resource "google_project_iam_binding" "logging_admin_for_service_account" {
+  project = var.gcp_project_id
+  role    = var.logging_service_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type
