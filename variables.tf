@@ -308,3 +308,8 @@ variable "logging_service_role" {
   description = "The role for the logging service"
   type        = string
 }
+
+variable "monitoring_service_role" {
+  description = "The role for the monitoring service"
+  type        = string
+}
