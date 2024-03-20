@@ -313,3 +313,8 @@ variable "monitoring_service_role" {
   description = "The role for the monitoring service"
   type        = string
 }
+
+variable "service_account_scopes" {
+  description = "The scopes for the service account"
+  type        = list(string)
+}
