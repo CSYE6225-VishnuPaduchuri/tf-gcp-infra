@@ -188,8 +188,14 @@ resource "google_compute_instance" "webapp_vm_instance" {
     access_config {}
   }
 
+  #  Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance#service_account
+  service_account {
+    email  = google_service_account.service_account.email
+    scopes = var.service_account_scopes
+  }
+
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account]
 
   # In the startup script, i am adding check to see if ENV file path exists or not
   # If it doesnt no exists, then creating the env file and adding the environment variables
@@ -224,8 +230,9 @@ else
 fi
 
 sudo systemctl daemon-reload
-sudo systemctl stop webapp
-sudo systemctl start webapp
+sudo systemctl restart webapp
+
+sudo systemctl daemon-reload
 
 echo "Test=Working" >> /tmp/.testEnv
 
