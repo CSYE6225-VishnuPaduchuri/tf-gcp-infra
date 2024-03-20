@@ -138,6 +138,12 @@ resource "google_compute_firewall" "webapp_deny_firewall" {
   depends_on    = [google_compute_network.vpc]
 }
 
+# Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
+resource "google_service_account" "service_account" {
+  account_id                   = var.service_account_id
+  display_name                 = var.service_account_display_name
+  create_ignore_already_exists = var.service_account_create_ignore_already_exists
+}
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type

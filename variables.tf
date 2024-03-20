@@ -288,3 +288,18 @@ variable "webapp_domain_managed_zone" {
   description = "The managed zone for the domain"
   type        = string
 }
+
+variable "service_account_id" {
+  description = "value of the service account id"
+  type        = string
+}
+
+variable "service_account_display_name" {
+  description = "The display name of the service account"
+  type        = string
+}
+
+variable "service_account_create_ignore_already_exists" {
+  description = "The boolean value to ignore already exists"
+  type        = bool
+}
