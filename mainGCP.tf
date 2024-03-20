@@ -156,6 +156,18 @@ resource "google_project_iam_binding" "logging_admin_for_service_account" {
 
   depends_on = [google_service_account.service_account]
 }
+
+resource "google_project_iam_binding" "monitoring_metric_writer_for_service_account" {
+  project = var.gcp_project_id
+  role    = var.monitoring_service_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
+
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type
