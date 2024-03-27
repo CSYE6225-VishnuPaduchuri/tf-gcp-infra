@@ -211,6 +211,54 @@ resource "google_project_iam_binding" "cloud_run_invoker_role" {
 
   depends_on = [google_service_account.service_account]
 }
+
+resource "google_cloud_run_service_iam_member" "cloud_run_invoker" {
+  project  = google_cloudfunctions2_function.serverless-v2.project
+  location = google_cloudfunctions2_function.serverless-v2.location
+  service  = google_cloudfunctions2_function.serverless-v2.name
+  role     = var.cloud_runner_invoker_role
+  member   = "serviceAccount:${google_service_account.service_account.email}"
+
+  depends_on = [google_service_account.service_account, google_cloudfunctions2_function.serverless-v2]
+}
+
+resource "google_pubsub_schema" "schema_definition" {
+  name       = var.pubsub_values.schema_name
+  type       = var.pubsub_values.schema_type
+  definition = var.pubsub_values.schema_definition
+}
+
+resource "google_pubsub_topic" "verify_topic" {
+  project                    = var.gcp_project_id
+  name                       = var.pubsub_values.topic_name
+  message_retention_duration = var.pubsub_values.topic_message_retention
+
+  schema_settings {
+    schema   = "projects/${var.gcp_project_id}/schemas/${google_pubsub_schema.schema_definition.name}"
+    encoding = var.pubsub_values.topic_settings_encoding
+  }
+
+  depends_on = [google_pubsub_schema.schema_definition]
+}
+
+
+resource "google_pubsub_topic_iam_binding" "topic_binding" {
+  project = google_pubsub_topic.verify_topic.project
+  topic   = google_pubsub_topic.verify_topic.name
+  role    = var.pubsub_publisher_role
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account, google_pubsub_topic.verify_topic]
+}
+
+resource "google_pubsub_subscription" "verify_email_subscription" {
+  name  = var.pubsub_values.subscription_name
+  topic = google_pubsub_topic.verify_topic.name
+
+  depends_on = [google_pubsub_topic.verify_topic]
+}
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type

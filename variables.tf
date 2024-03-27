@@ -318,3 +318,77 @@ variable "service_account_scopes" {
   description = "The scopes for the service account"
   type        = list(string)
 }
+
+variable "pubsub_publisher_role" {
+  description = "The role for the pubsub publisher"
+  type        = string
+}
+
+variable "token_creator_role" {
+  description = "The role for the token creator"
+  type        = string
+}
+
+variable "cloud_functions_developer_role" {
+  description = "The role for the cloud functions developer"
+  type        = string
+}
+
+variable "cloud_runner_invoker_role" {
+  description = "The role for the cloud runner invoker"
+  type        = string
+}
+
+variable "serverless_vpc_access" {
+  description = "Serverless VPC Access values"
+  type = object({
+    name           = string
+    ip_cidr_range  = string
+    machine_type   = string
+    min_instances  = number
+    max_instances  = number
+    max_throughput = number
+  })
+}
+
+variable "pubsub_values" {
+  description = "Variables for PubSub"
+  type = object({
+    schema_name             = string
+    schema_type             = string
+    schema_definition       = string
+    topic_name              = string
+    topic_message_retention = string
+    topic_settings_encoding = string
+    subscription_name       = string
+  })
+}
+
+variable "mail_gun_api_key" {
+  description = "Mailgun API key"
+  type        = string
+}
+
+variable "serverless_cloud_function" {
+  description = "Cloud Function variables"
+  type = object({
+    name                     = string
+    description              = string
+    runtime                  = string
+    entry_point              = string
+    bucket_source            = string
+    object_source            = string
+    timeout                  = number
+    memory                   = string
+    max_instance_concurrency = number
+
+    min_instance_count             = number
+    max_instance_count             = number
+    available_cpu                  = number
+    ingress_settings               = string
+    vpc_connector_egress_settings  = string
+    all_traffic_on_latest_revision = bool
+    event_type                     = string
+    retry_policy                   = string
+  })
+}
