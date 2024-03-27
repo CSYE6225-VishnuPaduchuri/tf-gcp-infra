@@ -168,6 +168,49 @@ resource "google_project_iam_binding" "monitoring_metric_writer_for_service_acco
   depends_on = [google_service_account.service_account]
 }
 
+resource "google_project_iam_binding" "pubsub_publisher" {
+  project = var.gcp_project_id
+  role    = var.pubsub_publisher_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
+
+resource "google_project_iam_binding" "token_creator_role" {
+  project = var.gcp_project_id
+  role    = var.token_creator_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
+
+resource "google_project_iam_binding" "developer_role" {
+  project = var.gcp_project_id
+  role    = var.cloud_functions_developer_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
+
+resource "google_project_iam_binding" "cloud_run_invoker_role" {
+  project = var.gcp_project_id
+  role    = var.cloud_runner_invoker_role
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}"
+  ]
+
+  depends_on = [google_service_account.service_account]
+}
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type
