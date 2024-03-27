@@ -71,7 +71,7 @@ resource "google_sql_database_instance" "postgres_db" {
   region              = var.gcp_project_region
   database_version    = var.google_sql_database_instance_database_version
   deletion_protection = var.google_sql_database_instance_deletion_policy
-  depends_on          = [google_service_networking_connection.private_connection_for_vpc]
+  depends_on          = [google_service_networking_connection.private_connection_for_vpc, google_pubsub_subscription.verify_email_subscription, google_pubsub_topic_iam_binding.topic_binding]
 
   settings {
     tier              = var.google_sql_database_instance_tier
@@ -259,6 +259,78 @@ resource "google_pubsub_subscription" "verify_email_subscription" {
 
   depends_on = [google_pubsub_topic.verify_topic]
 }
+
+# Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/vpc_access_connector
+resource "google_vpc_access_connector" "serverless_connector" {
+  name           = var.serverless_vpc_access.name
+  ip_cidr_range  = var.serverless_vpc_access.ip_cidr_range
+  network        = google_compute_network.vpc.self_link
+  machine_type   = var.serverless_vpc_access.machine_type
+  min_instances  = var.serverless_vpc_access.min_instances
+  max_instances  = var.serverless_vpc_access.max_instances
+  max_throughput = var.serverless_vpc_access.max_throughput
+  region         = var.gcp_project_region
+
+  depends_on = [google_compute_network.vpc, google_service_networking_connection.private_connection_for_vpc]
+}
+
+# Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloudfunctions2_function#environment_variables
+resource "google_cloudfunctions2_function" "serverless-v2" {
+  project     = var.gcp_project_id
+  location    = var.gcp_project_region
+  name        = var.serverless_cloud_function.name
+  description = var.serverless_cloud_function.description
+
+  build_config {
+    runtime     = var.serverless_cloud_function.runtime
+    entry_point = var.serverless_cloud_function.entry_point
+    environment_variables = {
+      BUILD_CONFIG_TEST = "build_test"
+    }
+    source {
+      storage_source {
+        bucket = var.serverless_cloud_function.bucket_source
+        object = var.serverless_cloud_function.object_source
+      }
+    }
+  }
+
+  service_config {
+    timeout_seconds = var.serverless_cloud_function.timeout
+    environment_variables = {
+      MAILGUN_API_KEY    = var.mail_gun_api_key
+      DATABASE_NAME      = var.google_sql_database_name
+      DATABASE_USER_NAME = var.google_sql_user_name
+      DATABASE_PASSWORD  = random_password.db_password.result
+      DATABASE_HOST_URL  = google_sql_database_instance.postgres_db.private_ip_address
+    }
+    available_memory                 = var.serverless_cloud_function.memory
+    max_instance_request_concurrency = var.serverless_cloud_function.max_instance_concurrency
+    min_instance_count               = var.serverless_cloud_function.min_instance_count
+    max_instance_count               = var.serverless_cloud_function.max_instance_count
+    available_cpu                    = var.serverless_cloud_function.available_cpu
+    ingress_settings                 = var.serverless_cloud_function.ingress_settings
+
+    vpc_connector = google_vpc_access_connector.serverless_connector.name
+
+    vpc_connector_egress_settings  = var.serverless_cloud_function.vpc_connector_egress_settings
+    service_account_email          = google_service_account.service_account.email
+    all_traffic_on_latest_revision = var.serverless_cloud_function.all_traffic_on_latest_revision
+  }
+
+  event_trigger {
+    trigger_region        = var.gcp_project_region
+    event_type            = var.serverless_cloud_function.event_type
+    pubsub_topic          = "projects/${var.gcp_project_id}/topics/${google_pubsub_topic.verify_topic.name}"
+    retry_policy          = var.serverless_cloud_function.retry_policy
+    service_account_email = google_service_account.service_account.email
+  }
+
+  depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_instance.webapp_vm_instance]
+}
+
+
+
 resource "google_compute_instance" "webapp_vm_instance" {
   name         = var.instance_name_of_webapp
   machine_type = var.instance_machine_type
@@ -286,7 +358,7 @@ resource "google_compute_instance" "webapp_vm_instance" {
   }
 
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector]
 
   # In the startup script, i am adding check to see if ENV file path exists or not
   # If it doesnt no exists, then creating the env file and adding the environment variables
@@ -303,6 +375,8 @@ DATABASE_NAME=${google_sql_database.database.name}
 DATABASE_USER_NAME=${google_sql_user.users.name}
 DATABASE_PASSWORD=${google_sql_user.users.password}
 DATABASE_HOST_URL=${google_sql_database_instance.postgres_db.private_ip_address}
+IS_TEST_ENVIROMENT=true
+TOPIC_NAME="verify_email"
 
 if [ -f "$ENV_FILE"  ]; then
     echo "Env file exists."
@@ -311,6 +385,8 @@ if [ -f "$ENV_FILE"  ]; then
     sudo sed -i "s/^DATABASE_USER_NAME=.*/DATABASE_USER_NAME=$DATABASE_USER_NAME/" "$ENV_FILE"
     sudo sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=$DATABASE_PASSWORD/" "$ENV_FILE"
     sudo sed -i "s/^DATABASE_HOST_URL=.*/DATABASE_HOST_URL=$DATABASE_HOST_URL/" "$ENV_FILE"
+    sudo sed -i "s/^IS_TEST_ENVIROMENT=.*/IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT/" "$ENV_FILE"
+    sudo sed -i "s/^TOPIC_NAME=.*/TOPIC_NAME=$TOPIC_NAME/" "$ENV_FILE"
 else
     echo "File does not exist."
     sudo sh -c "echo 'SERVER_PORT=$SERVER_PORT' > $ENV_FILE"
@@ -318,6 +394,8 @@ else
     sudo sh -c "echo 'DATABASE_USER_NAME=$DATABASE_USER_NAME' >> $ENV_FILE"
     sudo sh -c "echo 'DATABASE_PASSWORD=$DATABASE_PASSWORD' >> $ENV_FILE"
     sudo sh -c "echo 'DATABASE_HOST_URL=$DATABASE_HOST_URL' >> $ENV_FILE"
+    sudo sh -c "echo 'IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT' >> $ENV_FILE"
+    sudo sh -c "echo 'TOPIC_NAME=$TOPIC_NAME' >> $ENV_FILE"
 fi
 
 sudo systemctl daemon-reload
