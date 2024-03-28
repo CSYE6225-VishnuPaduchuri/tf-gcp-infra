@@ -375,7 +375,7 @@ DATABASE_NAME=${google_sql_database.database.name}
 DATABASE_USER_NAME=${google_sql_user.users.name}
 DATABASE_PASSWORD=${google_sql_user.users.password}
 DATABASE_HOST_URL=${google_sql_database_instance.postgres_db.private_ip_address}
-IS_TEST_ENVIROMENT=true
+IS_TEST_ENVIROMENT=false
 TOPIC_NAME="verify_email"
 
 if [ -f "$ENV_FILE"  ]; then
