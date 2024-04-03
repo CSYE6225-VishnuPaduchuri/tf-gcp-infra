@@ -457,3 +457,13 @@ variable "loadbalancer_firewall_priority" {
   description = "The priority for the load balancer firewall"
   type        = number
 }
+
+variable "ssl_certificate_name" {
+  description = "The name of the SSL certificate"
+  type        = string
+}
+
+variable "default_forward_address_name" {
+  description = "The name of the default forward address"
+  type        = string
+}
