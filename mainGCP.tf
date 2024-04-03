@@ -325,6 +325,10 @@ resource "google_compute_region_instance_template" "webapp_vm_instance" {
     scopes = var.service_account_scopes
   }
 
+  labels = {
+    gce-service-proxy = "on"
+  }
+
   tags       = var.vm_firewall_target_tags
   depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.health_check_firewall]
 
@@ -427,6 +431,22 @@ resource "google_cloudfunctions2_function" "serverless-v2" {
   }
 
   depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_region_instance_template.webapp_vm_instance]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_managed_ssl_certificate
+resource "google_compute_managed_ssl_certificate" "ssl_certificates" {
+  name = var.ssl_certificate_name
+
+  managed {
+    domains = [var.webapp_domain_name]
+  }
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address
+resource "google_compute_global_address" "default_forward_address" {
+  project = var.gcp_project_id
+  name    = var.default_forward_address_name
+  depends_on = [google_compute_network.vpc]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
