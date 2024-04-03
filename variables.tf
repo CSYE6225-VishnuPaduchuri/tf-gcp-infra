@@ -438,7 +438,7 @@ variable "loadbalancer_firewall_name" {
   type        = string
 }
 
-variable "loadbalancer_firewall_protocol"{
+variable "loadbalancer_firewall_protocol" {
   description = "The protocol for the load balancer firewall"
   type        = string
 }
@@ -466,4 +466,44 @@ variable "ssl_certificate_name" {
 variable "default_forward_address_name" {
   description = "The name of the default forward address"
   type        = string
+}
+
+variable "instance_health_check_name" {
+  description = "The name of the instance health check"
+  type        = string
+}
+
+variable "instance_health_check_interval_sec" {
+  description = "The interval in seconds for the instance health check"
+  type        = number
+}
+
+variable "instance_health_check_timeout_sec" {
+  description = "The timeout in seconds for the instance health check"
+  type        = number
+}
+
+variable "instance_health_check_healthy_threshold" {
+  description = "The healthy threshold for the instance health check"
+  type        = number
+}
+
+variable "instance_health_check_unhealthy_threshold" {
+  description = "The unhealthy threshold for the instance health check"
+  type        = number
+}
+
+variable "instance_health_check_port_name" {
+  description = "The port name for the instance health check"
+  type        = string
+}
+
+variable "instance_health_check_request_path" {
+  description = "The request path for the instance health check"
+  type        = string
+}
+
+variable "instance_health_check_port" {
+  description = "The port for the instance health check"
+  type        = number
 }

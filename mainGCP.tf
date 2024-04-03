@@ -139,8 +139,8 @@ resource "google_compute_firewall" "webapp_deny_firewall" {
 }
 
 resource "google_compute_firewall" "loadbalancer_firewall" {
-  name      = var.loadbalancer_firewall_name
-  network   = google_compute_network.vpc.self_link
+  name    = var.loadbalancer_firewall_name
+  network = google_compute_network.vpc.self_link
 
   allow {
     protocol = var.loadbalancer_firewall_protocol
@@ -148,9 +148,9 @@ resource "google_compute_firewall" "loadbalancer_firewall" {
   }
 
   source_ranges = var.loadbalancer_firewall_source_ranges
-  target_tags =  var.vm_firewall_target_tags
-  priority = var.loadbalancer_firewall_priority
-  depends_on = [google_compute_network.vpc]
+  target_tags   = var.vm_firewall_target_tags
+  priority      = var.loadbalancer_firewall_priority
+  depends_on    = [google_compute_network.vpc]
 }
 
 # Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
@@ -444,9 +444,24 @@ resource "google_compute_managed_ssl_certificate" "ssl_certificates" {
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address
 resource "google_compute_global_address" "default_forward_address" {
-  project = var.gcp_project_id
-  name    = var.default_forward_address_name
+  project    = var.gcp_project_id
+  name       = var.default_forward_address_name
   depends_on = [google_compute_network.vpc]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_health_check
+resource "google_compute_health_check" "health_check" {
+  name                = var.instance_health_check_name
+  check_interval_sec  = var.instance_health_check_interval_sec
+  timeout_sec         = var.instance_health_check_timeout_sec
+  healthy_threshold   = var.instance_health_check_healthy_threshold
+  unhealthy_threshold = var.instance_health_check_unhealthy_threshold
+
+  http_health_check {
+    port_name    = var.instance_health_check_port_name
+    request_path = var.instance_health_check_request_path
+    port         = var.instance_health_check_port
+  }
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
