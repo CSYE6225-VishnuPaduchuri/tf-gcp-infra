@@ -392,3 +392,68 @@ variable "serverless_cloud_function" {
     retry_policy                   = string
   })
 }
+
+variable "instance_template_name" {
+  description = "The name of the instance template"
+  type        = string
+}
+
+variable "instance_template_machine_type" {
+  description = "The machine type for the instance template"
+  type        = string
+}
+
+variable "instance_template_can_ip_forward" {
+  description = "This indicates if the instance can forward IP packets"
+  type        = bool
+}
+
+variable "instance_template_name_auto_delete" {
+  description = "This indicates if the instance should be deleted when we run terraform destroy"
+  type        = bool
+}
+
+variable "instance_template_name_boot" {
+  description = "value of the boot disk"
+  type        = bool
+}
+
+variable "instance_template_affinity_type" {
+  description = "The type of reservation from which this instance can consume resources"
+  type        = string
+}
+
+variable "instance_template_scheduling_preemptible" {
+  description = "Allows instance to be preempted"
+  type        = bool
+}
+
+variable "instance_template_scheduling_automatic_restart" {
+  description = "Specifies whether the instance should be automatically restarted if it is terminated by Compute Engine"
+  type        = bool
+}
+
+variable "loadbalancer_firewall_name" {
+  description = "The name of the firewall for the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_firewall_protocol"{
+  description = "The protocol for the load balancer firewall"
+  type        = string
+}
+
+variable "loadbalancer_firewall_ports" {
+  description = "The ports for the load balancer firewall"
+  type        = list(string)
+}
+
+variable "loadbalancer_firewall_source_ranges" {
+  description = "The source ranges for the load balancer firewall"
+  type        = list(string)
+}
+
+variable "loadbalancer_firewall_priority" {
+  description = "The priority for the load balancer firewall"
+  type        = number
+}
