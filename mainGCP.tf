@@ -138,6 +138,21 @@ resource "google_compute_firewall" "webapp_deny_firewall" {
   depends_on    = [google_compute_network.vpc]
 }
 
+resource "google_compute_firewall" "loadbalancer_firewall" {
+  name      = var.loadbalancer_firewall_name
+  network   = google_compute_network.vpc.self_link
+
+  allow {
+    protocol = var.loadbalancer_firewall_protocol
+    ports    = var.loadbalancer_firewall_ports
+  }
+
+  source_ranges = var.loadbalancer_firewall_source_ranges
+  target_tags =  var.vm_firewall_target_tags
+  priority = var.loadbalancer_firewall_priority
+  depends_on = [google_compute_network.vpc]
+}
+
 # Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
 resource "google_service_account" "service_account" {
   account_id                   = var.service_account_id
@@ -274,6 +289,91 @@ resource "google_vpc_access_connector" "serverless_connector" {
   depends_on = [google_compute_network.vpc, google_service_networking_connection.private_connection_for_vpc]
 }
 
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_region_instance_template
+resource "google_compute_region_instance_template" "webapp_vm_instance" {
+  name           = var.instance_template_name
+  machine_type   = var.instance_template_machine_type
+  region         = var.gcp_project_region
+  can_ip_forward = var.instance_template_can_ip_forward
+
+  disk {
+    source_image = var.instance_image_from_packer
+    auto_delete  = var.instance_template_name_auto_delete
+    boot         = var.instance_template_name_boot
+    disk_type    = var.instance_image_type
+    disk_size_gb = var.instance_image_disk_size
+  }
+
+  reservation_affinity {
+    type = var.instance_template_affinity_type
+  }
+
+  network_interface {
+    network    = google_compute_network.vpc.self_link
+    subnetwork = google_compute_subnetwork.webapp.self_link
+    access_config {}
+  }
+
+  scheduling {
+    preemptible       = var.instance_template_scheduling_preemptible
+    automatic_restart = var.instance_template_scheduling_automatic_restart
+  }
+
+  #  Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance#service_account
+  service_account {
+    email  = google_service_account.service_account.email
+    scopes = var.service_account_scopes
+  }
+
+  tags       = var.vm_firewall_target_tags
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.health_check_firewall]
+
+  metadata = {
+    startup-script = <<-EOT
+#!/bin/bash
+
+set -e
+
+ENV_FILE="/opt/csye6225/webapp/.env"
+SERVER_PORT=8080
+DATABASE_NAME=${google_sql_database.database.name}
+DATABASE_USER_NAME=${google_sql_user.users.name}
+DATABASE_PASSWORD=${google_sql_user.users.password}
+DATABASE_HOST_URL=${google_sql_database_instance.postgres_db.private_ip_address}
+IS_TEST_ENVIROMENT=false
+TOPIC_NAME="verify_email"
+
+if [ -f "$ENV_FILE"  ]; then
+    echo "Env file exists."
+    sudo sed -i "s/^SERVER_PORT=.*/SERVER_PORT=$SERVER_PORT/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_NAME=.*/DATABASE_NAME=$DATABASE_NAME/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_USER_NAME=.*/DATABASE_USER_NAME=$DATABASE_USER_NAME/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=$DATABASE_PASSWORD/" "$ENV_FILE"
+    sudo sed -i "s/^DATABASE_HOST_URL=.*/DATABASE_HOST_URL=$DATABASE_HOST_URL/" "$ENV_FILE"
+    sudo sed -i "s/^IS_TEST_ENVIROMENT=.*/IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT/" "$ENV_FILE"
+    sudo sed -i "s/^TOPIC_NAME=.*/TOPIC_NAME=$TOPIC_NAME/" "$ENV_FILE"
+else
+    echo "File does not exist."
+    sudo sh -c "echo 'SERVER_PORT=$SERVER_PORT' > $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_NAME=$DATABASE_NAME' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_USER_NAME=$DATABASE_USER_NAME' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_PASSWORD=$DATABASE_PASSWORD' >> $ENV_FILE"
+    sudo sh -c "echo 'DATABASE_HOST_URL=$DATABASE_HOST_URL' >> $ENV_FILE"
+    sudo sh -c "echo 'IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT' >> $ENV_FILE"
+    sudo sh -c "echo 'TOPIC_NAME=$TOPIC_NAME' >> $ENV_FILE"
+fi
+
+sudo systemctl daemon-reload
+sudo systemctl restart webapp
+
+sudo systemctl daemon-reload
+
+echo "Test=Working" >> /tmp/.testEnv
+
+EOT
+  }
+}
+
 # Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloudfunctions2_function#environment_variables
 resource "google_cloudfunctions2_function" "serverless-v2" {
   project     = var.gcp_project_id
@@ -326,88 +426,7 @@ resource "google_cloudfunctions2_function" "serverless-v2" {
     service_account_email = google_service_account.service_account.email
   }
 
-  depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_instance.webapp_vm_instance]
-}
-
-
-
-resource "google_compute_instance" "webapp_vm_instance" {
-  name         = var.instance_name_of_webapp
-  machine_type = var.instance_machine_type
-  zone         = var.instance_zone
-
-  boot_disk {
-    initialize_params {
-      image = var.instance_image_from_packer
-      type  = var.instance_image_type
-      size  = var.instance_image_disk_size
-    }
-    auto_delete = var.instance_boot_disk_auto_delete
-  }
-
-  network_interface {
-    network    = google_compute_network.vpc.self_link
-    subnetwork = google_compute_subnetwork.webapp.self_link
-    access_config {}
-  }
-
-  #  Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance#service_account
-  service_account {
-    email  = google_service_account.service_account.email
-    scopes = var.service_account_scopes
-  }
-
-  tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector]
-
-  # In the startup script, i am adding check to see if ENV file path exists or not
-  # If it doesnt no exists, then creating the env file and adding the environment variables
-  # If file exists, then im updating the environment variables to the latest values
-  metadata = {
-    startup-script = <<-EOT
-#!/bin/bash
-
-set -e
-
-ENV_FILE="/opt/csye6225/webapp/.env"
-SERVER_PORT=8080
-DATABASE_NAME=${google_sql_database.database.name}
-DATABASE_USER_NAME=${google_sql_user.users.name}
-DATABASE_PASSWORD=${google_sql_user.users.password}
-DATABASE_HOST_URL=${google_sql_database_instance.postgres_db.private_ip_address}
-IS_TEST_ENVIROMENT=false
-TOPIC_NAME="verify_email"
-
-if [ -f "$ENV_FILE"  ]; then
-    echo "Env file exists."
-    sudo sed -i "s/^SERVER_PORT=.*/SERVER_PORT=$SERVER_PORT/" "$ENV_FILE"
-    sudo sed -i "s/^DATABASE_NAME=.*/DATABASE_NAME=$DATABASE_NAME/" "$ENV_FILE"
-    sudo sed -i "s/^DATABASE_USER_NAME=.*/DATABASE_USER_NAME=$DATABASE_USER_NAME/" "$ENV_FILE"
-    sudo sed -i "s/^DATABASE_PASSWORD=.*/DATABASE_PASSWORD=$DATABASE_PASSWORD/" "$ENV_FILE"
-    sudo sed -i "s/^DATABASE_HOST_URL=.*/DATABASE_HOST_URL=$DATABASE_HOST_URL/" "$ENV_FILE"
-    sudo sed -i "s/^IS_TEST_ENVIROMENT=.*/IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT/" "$ENV_FILE"
-    sudo sed -i "s/^TOPIC_NAME=.*/TOPIC_NAME=$TOPIC_NAME/" "$ENV_FILE"
-else
-    echo "File does not exist."
-    sudo sh -c "echo 'SERVER_PORT=$SERVER_PORT' > $ENV_FILE"
-    sudo sh -c "echo 'DATABASE_NAME=$DATABASE_NAME' >> $ENV_FILE"
-    sudo sh -c "echo 'DATABASE_USER_NAME=$DATABASE_USER_NAME' >> $ENV_FILE"
-    sudo sh -c "echo 'DATABASE_PASSWORD=$DATABASE_PASSWORD' >> $ENV_FILE"
-    sudo sh -c "echo 'DATABASE_HOST_URL=$DATABASE_HOST_URL' >> $ENV_FILE"
-    sudo sh -c "echo 'IS_TEST_ENVIROMENT=$IS_TEST_ENVIROMENT' >> $ENV_FILE"
-    sudo sh -c "echo 'TOPIC_NAME=$TOPIC_NAME' >> $ENV_FILE"
-fi
-
-sudo systemctl daemon-reload
-sudo systemctl restart webapp
-
-sudo systemctl daemon-reload
-
-echo "Test=Working" >> /tmp/.testEnv
-
-EOT
-  }
-
+  depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_region_instance_template.webapp_vm_instance]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
