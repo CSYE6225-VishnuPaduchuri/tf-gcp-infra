@@ -330,7 +330,7 @@ resource "google_compute_region_instance_template" "webapp_vm_instance" {
   }
 
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.health_check_firewall]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.loadbalancer_firewall]
 
   metadata = {
     startup-script = <<-EOT
@@ -464,6 +464,33 @@ resource "google_compute_health_check" "health_check" {
   }
 }
 
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_region_instance_group_manager
+resource "google_compute_region_instance_group_manager" "instance_group_manager" {
+  name                             = var.instance_group_manager_name
+  base_instance_name               = var.instance_group_manager_base_instance_name
+  description                      = var.instance_group_manager_description
+  region                           = var.gcp_project_region
+  distribution_policy_zones        = var.instance_group_manager_distribution_policy_zones
+  distribution_policy_target_shape = var.instance_group_manager_distribution_policy_target_shape
+
+  version {
+    instance_template = google_compute_region_instance_template.webapp_vm_instance.self_link
+  }
+
+  named_port {
+    name = var.instance_group_manager_port_name
+    port = var.instance_group_manager_port
+  }
+  auto_healing_policies {
+    health_check      = google_compute_health_check.health_check.self_link
+    initial_delay_sec = var.instance_group_manager_port_healing_initial_delay
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+  depends_on = [google_compute_region_instance_template.webapp_vm_instance, google_compute_health_check.health_check]
+}
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
 resource "google_dns_record_set" "webapp_dns" {
   name         = var.webapp_domain_name
