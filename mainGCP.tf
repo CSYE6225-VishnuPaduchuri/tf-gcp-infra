@@ -547,6 +547,18 @@ resource "google_compute_target_https_proxy" "webapp_proxy" {
   depends_on = [google_compute_managed_ssl_certificate.ssl_certificates, google_compute_url_map.web_url_map]
 }
 
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_forwarding_rule
+resource "google_compute_global_forwarding_rule" "forwarding_rule" {
+  name                  = var.forwarding_rule_name
+  target                = google_compute_target_https_proxy.webapp_proxy.id
+  port_range            = var.forwarding_rule_port_range
+  ip_protocol           = var.forwarding_rule_ip_protocol
+  load_balancing_scheme = var.forwarding_rule_load_balancing_scheme
+  ip_address            = google_compute_global_address.default_forward_address.id
+
+  depends_on = [google_compute_target_https_proxy.webapp_proxy]
+}
+
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
 resource "google_dns_record_set" "webapp_dns" {
   name         = var.webapp_domain_name
