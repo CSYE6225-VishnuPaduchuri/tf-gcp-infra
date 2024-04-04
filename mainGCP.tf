@@ -509,6 +509,26 @@ resource "google_compute_region_autoscaler" "autoscaler" {
   }
 }
 
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_backend_service
+resource "google_compute_backend_service" "loadbalancer" {
+  name          = var.loadbalancer_name
+  health_checks = [google_compute_health_check.health_check.self_link]
+  enable_cdn    = var.loadbalancer_enable_cdn
+
+  backend {
+    group           = google_compute_region_instance_group_manager.instance_group_manager.instance_group
+    balancing_mode  = var.loadbalancer_balancing_mode
+    capacity_scaler = var.loadbalancer_capacity_scaler
+  }
+
+  protocol              = var.loadbalancer_protocol
+  port_name             = var.loadbalancer_port_name
+  load_balancing_scheme = var.loadbalancer_load_balancing_scheme
+  timeout_sec           = var.loadbalancer_timeout_sec
+
+  depends_on = [google_compute_region_instance_group_manager.instance_group_manager, google_compute_health_check.health_check]
+}
+
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
 resource "google_dns_record_set" "webapp_dns" {
   name         = var.webapp_domain_name

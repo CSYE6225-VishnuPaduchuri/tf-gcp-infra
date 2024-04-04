@@ -572,3 +572,43 @@ variable "autoscaler_cpu_target" {
   description = "The CPU target for the autoscaler"
   type        = number
 }
+
+variable "loadbalancer_name" {
+  description = "The name of the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_enable_cdn" {
+  description = "This indicates if the CDN should be enabled for the load balancer"
+  type        = bool
+}
+
+variable "loadbalancer_balancing_mode" {
+  description = "The balancing mode for the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_capacity_scaler" {
+  description = "The capacity scaler for the load balancer"
+  type        = number
+}
+
+variable "loadbalancer_protocol" {
+  description = "The protocol for the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_port_name" {
+  description = "The port name for the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_load_balancing_scheme" {
+  description = "The load balancing scheme for the load balancer"
+  type        = string
+}
+
+variable "loadbalancer_timeout_sec" {
+  description = "The timeout in seconds for the load balancer"
+  type        = number
+}
