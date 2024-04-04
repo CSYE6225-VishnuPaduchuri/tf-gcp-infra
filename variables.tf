@@ -612,3 +612,13 @@ variable "loadbalancer_timeout_sec" {
   description = "The timeout in seconds for the load balancer"
   type        = number
 }
+
+variable "web_url_map_name" {
+  description = "The name of the web url map"
+  type        = string
+}
+
+variable "webapp_proxy_name" {
+  description = "The name of the webapp proxy"
+  type        = string
+}

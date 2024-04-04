@@ -529,6 +529,24 @@ resource "google_compute_backend_service" "loadbalancer" {
   depends_on = [google_compute_region_instance_group_manager.instance_group_manager, google_compute_health_check.health_check]
 }
 
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_url_map
+resource "google_compute_url_map" "web_url_map" {
+  name            = var.web_url_map_name
+  default_service = google_compute_backend_service.loadbalancer.self_link
+  depends_on      = [google_compute_backend_service.loadbalancer]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_target_https_proxy
+resource "google_compute_target_https_proxy" "webapp_proxy" {
+  name    = var.webapp_proxy_name
+  url_map = google_compute_url_map.web_url_map.id
+  ssl_certificates = [
+    google_compute_managed_ssl_certificate.ssl_certificates.self_link
+  ]
+
+  depends_on = [google_compute_managed_ssl_certificate.ssl_certificates, google_compute_url_map.web_url_map]
+}
+
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
 resource "google_dns_record_set" "webapp_dns" {
   name         = var.webapp_domain_name
