@@ -491,6 +491,24 @@ resource "google_compute_region_instance_group_manager" "instance_group_manager"
   }
   depends_on = [google_compute_region_instance_template.webapp_vm_instance, google_compute_health_check.health_check]
 }
+
+# Reference from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_region_autoscaler
+resource "google_compute_region_autoscaler" "autoscaler" {
+  name   = var.autoscaler_name
+  region = var.gcp_project_region
+  target = google_compute_region_instance_group_manager.instance_group_manager.self_link
+
+  autoscaling_policy {
+    max_replicas    = var.autoscaler_max_replicas
+    min_replicas    = var.autoscaler_min_replicas
+    cooldown_period = var.autoscaler_cooldown_period
+
+    cpu_utilization {
+      target = var.autoscaler_cpu_target
+    }
+  }
+}
+
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
 resource "google_dns_record_set" "webapp_dns" {
   name         = var.webapp_domain_name

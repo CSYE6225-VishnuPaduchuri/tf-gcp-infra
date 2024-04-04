@@ -547,3 +547,28 @@ variable "instance_group_manager_port_healing_initial_delay" {
   description = "The initial delay for the port healing"
   type        = number
 }
+
+variable "autoscaler_name" {
+  description = "The name of the autoscaler"
+  type        = string
+}
+
+variable "autoscaler_max_replicas" {
+  description = "The maximum number of replicas for the autoscaler"
+  type        = number
+}
+
+variable "autoscaler_min_replicas" {
+  description = "The minimum number of replicas for the autoscaler"
+  type        = number
+}
+
+variable "autoscaler_cooldown_period" {
+  description = "The cooldown period for the autoscaler"
+  type        = number
+}
+
+variable "autoscaler_cpu_target" {
+  description = "The CPU target for the autoscaler"
+  type        = number
+}
