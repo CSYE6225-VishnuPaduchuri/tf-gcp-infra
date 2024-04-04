@@ -507,3 +507,43 @@ variable "instance_health_check_port" {
   description = "The port for the instance health check"
   type        = number
 }
+
+variable "instance_group_manager_name" {
+  description = "The name of the instance group manager"
+  type        = string
+}
+
+variable "instance_group_manager_base_instance_name" {
+  description = "value of the base instance name"
+  type        = string
+}
+
+variable "instance_group_manager_description" {
+  description = "The description of the instance group manager"
+  type        = string
+}
+
+variable "instance_group_manager_distribution_policy_zones" {
+  description = "The zones for the instance group manager"
+  type        = list(string)
+}
+
+variable "instance_group_manager_distribution_policy_target_shape" {
+  description = "The target shape for the instance group manager"
+  type        = string
+}
+
+variable "instance_group_manager_port_name" {
+  description = "The port name for the instance group manager"
+  type        = string
+}
+
+variable "instance_group_manager_port" {
+  description = "The port for the instance group manager"
+  type        = number
+}
+
+variable "instance_group_manager_port_healing_initial_delay" {
+  description = "The initial delay for the port healing"
+  type        = number
+}
