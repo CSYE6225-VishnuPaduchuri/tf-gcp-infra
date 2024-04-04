@@ -642,3 +642,8 @@ variable "forwarding_rule_load_balancing_scheme" {
   description = "The load balancing scheme for the forwarding rule"
   type        = string
 }
+
+variable "loadbalancer_firewall_direction" {
+  description = "The direction for the load balancer firewall"
+  type        = string
+}
