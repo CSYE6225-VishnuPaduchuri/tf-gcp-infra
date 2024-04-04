@@ -139,8 +139,9 @@ resource "google_compute_firewall" "webapp_deny_firewall" {
 }
 
 resource "google_compute_firewall" "loadbalancer_firewall" {
-  name    = var.loadbalancer_firewall_name
-  network = google_compute_network.vpc.self_link
+  name      = var.loadbalancer_firewall_name
+  network   = google_compute_network.vpc.self_link
+  direction = var.loadbalancer_firewall_direction
 
   allow {
     protocol = var.loadbalancer_firewall_protocol
@@ -507,6 +508,8 @@ resource "google_compute_region_autoscaler" "autoscaler" {
       target = var.autoscaler_cpu_target
     }
   }
+
+  depends_on = [google_compute_region_instance_group_manager.instance_group_manager]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_backend_service
@@ -556,7 +559,7 @@ resource "google_compute_global_forwarding_rule" "forwarding_rule" {
   load_balancing_scheme = var.forwarding_rule_load_balancing_scheme
   ip_address            = google_compute_global_address.default_forward_address.id
 
-  depends_on = [google_compute_target_https_proxy.webapp_proxy]
+  depends_on = [google_compute_target_https_proxy.webapp_proxy, google_compute_global_address.default_forward_address]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_record_set
@@ -566,6 +569,8 @@ resource "google_dns_record_set" "webapp_dns" {
   ttl          = var.webapp_domain_ttl
   managed_zone = var.webapp_domain_managed_zone
 
-  rrdatas = [google_compute_instance.webapp_vm_instance.network_interface[0].access_config[0].nat_ip]
+  rrdatas = [google_compute_global_address.default_forward_address.address]
+
+  depends_on = [google_compute_global_address.default_forward_address, google_compute_region_instance_template.webapp_vm_instance, ]
 }
 
