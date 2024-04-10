@@ -637,7 +637,7 @@ resource "google_storage_bucket" "serverless_bucket" {
     default_kms_key_name = google_kms_crypto_key.storage_crypto_key.id
   }
 
-  depends_on = [google_kms_crypto_key.storage_crypto_key]
+  depends_on = [google_kms_crypto_key.storage_crypto_key, google_kms_crypto_key_iam_binding.storage_bucket_binding]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object
@@ -662,6 +662,30 @@ resource "google_kms_crypto_key" "storage_crypto_key" {
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
 resource "google_project_service_identity" "sql_service_account" {
   provider = google-beta
-  project = var.gcp_project_id
+  project  = var.gcp_project_id
   service  = var.sql_service_account_service_name
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_kms_crypto_key_iam
+resource "google_kms_crypto_key_iam_binding" "webapp_instance_binding" {
+  crypto_key_id = google_kms_crypto_key.webapp_crypto_key.id
+  role          = var.encrypter_decrypter_role
+  members       = ["serviceAccount:service-347951295878@compute-system.iam.gserviceaccount.com"]
+  depends_on    = [google_kms_crypto_key.webapp_crypto_key]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_kms_crypto_key_iam
+resource "google_kms_crypto_key_iam_binding" "storage_bucket_binding" {
+  crypto_key_id = google_kms_crypto_key.storage_crypto_key.id
+  role          = var.encrypter_decrypter_role
+  members       = ["serviceAccount:service-347951295878@gs-project-accounts.iam.gserviceaccount.com"]
+  depends_on    = [google_kms_crypto_key.storage_crypto_key]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_kms_crypto_key_iam
+resource "google_kms_crypto_key_iam_binding" "sql_binding" {
+  crypto_key_id = google_kms_crypto_key.sql_crypto_key.id
+  role          = var.encrypter_decrypter_role
+  members       = ["serviceAccount:${google_project_service_identity.sql_service_account.email}"]
+  depends_on    = [google_kms_crypto_key.sql_crypto_key]
 }

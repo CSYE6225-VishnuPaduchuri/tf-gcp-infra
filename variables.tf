@@ -687,3 +687,8 @@ variable "sql_service_account_service_name" {
   description = "The service name for the SQL service account"
   type        = string
 }
+
+variable "encrypter_decrypter_role" {
+  description = "The role for the encrypter decrypter"
+  type        = string
+}
