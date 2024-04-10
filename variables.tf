@@ -647,3 +647,8 @@ variable "loadbalancer_firewall_direction" {
   description = "The direction for the load balancer firewall"
   type        = string
 }
+
+variable "kms_key_ring_name" {
+  description = "value of the key ring name"
+  type        = string
+}

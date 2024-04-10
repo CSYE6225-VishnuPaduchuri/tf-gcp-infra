@@ -574,3 +574,9 @@ resource "google_dns_record_set" "webapp_dns" {
   depends_on = [google_compute_global_address.default_forward_address, google_compute_region_instance_template.webapp_vm_instance, ]
 }
 
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_key_ring
+resource "google_kms_key_ring" "application_key_ring" {
+  name     = var.kms_key_ring_name
+  location = var.gcp_project_region
+}
