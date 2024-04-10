@@ -622,6 +622,12 @@ resource "google_storage_bucket" "serverless_bucket" {
   force_destroy = true
 
   public_access_prevention = var.serverless_bucket_public_access_prevention
+
+  encryption {
+    default_kms_key_name = google_kms_crypto_key.storage_crypto_key.id
+  }
+
+  depends_on = [google_kms_crypto_key.storage_crypto_key]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object
@@ -629,4 +635,16 @@ resource "google_storage_bucket_object" "serverless_object" {
   name   = var.serverless_cloud_function.object_source
   bucket = google_storage_bucket.serverless_bucket.name
   source = var.serverless_object_source
+}
+
+resource "google_kms_crypto_key" "storage_crypto_key" {
+  name            = var.storage_crypto_key_name
+  key_ring        = google_kms_key_ring.application_key_ring.id
+  rotation_period = var.kms_crypto_key_rotation_period
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [google_kms_key_ring.application_key_ring]
 }
