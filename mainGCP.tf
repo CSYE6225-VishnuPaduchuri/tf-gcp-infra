@@ -4,6 +4,12 @@ provider "google" {
   region      = var.gcp_project_region
 }
 
+provider "google-beta" {
+  credentials = file(var.gcp_credentials)
+  project     = var.gcp_project_id
+  region      = var.gcp_project_region
+}
+
 resource "google_compute_network" "vpc" {
   name                            = var.vpc_name
   auto_create_subnetworks         = var.vpc_create_subnets_automatically
@@ -578,10 +584,14 @@ resource "google_dns_record_set" "webapp_dns" {
   depends_on = [google_compute_global_address.default_forward_address, google_compute_region_instance_template.webapp_vm_instance, ]
 }
 
+resource "random_string" "random_key_prefix" {
+  length  = 12
+  special = false
+}
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_key_ring
 resource "google_kms_key_ring" "application_key_ring" {
-  name     = var.kms_key_ring_name
+  name     = "${var.kms_key_ring_name}-${random_string.random_key_prefix.result}"
   location = var.gcp_project_region
 }
 
@@ -647,4 +657,11 @@ resource "google_kms_crypto_key" "storage_crypto_key" {
   }
 
   depends_on = [google_kms_key_ring.application_key_ring]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service_identity
+resource "google_project_service_identity" "sql_service_account" {
+  provider = google-beta
+  project = var.gcp_project_id
+  service  = var.sql_service_account_service_name
 }
