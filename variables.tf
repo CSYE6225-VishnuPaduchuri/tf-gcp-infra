@@ -667,3 +667,13 @@ variable "sql_crypto_key_name" {
   description = "The name of the crypto key for the SQL DB"
   type        = string
 }
+
+variable "serverless_bucket_public_access_prevention" {
+  description = "The public access prevention for the serverless bucket"
+  type        = string
+}
+
+variable "serverless_object_source" {
+  description = "The object source for the serverless bucket"
+  type        = string
+}
