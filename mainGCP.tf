@@ -604,7 +604,7 @@ resource "google_kms_crypto_key" "webapp_crypto_key" {
   rotation_period = var.kms_crypto_key_rotation_period
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   depends_on = [google_kms_key_ring.application_key_ring]
@@ -619,7 +619,7 @@ resource "google_kms_crypto_key" "sql_crypto_key" {
   rotation_period = var.kms_crypto_key_rotation_period
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   depends_on = [google_kms_key_ring.application_key_ring]
@@ -653,7 +653,7 @@ resource "google_kms_crypto_key" "storage_crypto_key" {
   rotation_period = var.kms_crypto_key_rotation_period
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   depends_on = [google_kms_key_ring.application_key_ring]
@@ -670,7 +670,7 @@ resource "google_project_service_identity" "sql_service_account" {
 resource "google_kms_crypto_key_iam_binding" "webapp_instance_binding" {
   crypto_key_id = google_kms_crypto_key.webapp_crypto_key.id
   role          = var.encrypter_decrypter_role
-  members       = ["serviceAccount:service-347951295878@compute-system.iam.gserviceaccount.com"]
+  members       = [var.webapp_instance_service_agent_binding]
   depends_on    = [google_kms_crypto_key.webapp_crypto_key]
 }
 
@@ -678,7 +678,7 @@ resource "google_kms_crypto_key_iam_binding" "webapp_instance_binding" {
 resource "google_kms_crypto_key_iam_binding" "storage_bucket_binding" {
   crypto_key_id = google_kms_crypto_key.storage_crypto_key.id
   role          = var.encrypter_decrypter_role
-  members       = ["serviceAccount:service-347951295878@gs-project-accounts.iam.gserviceaccount.com"]
+  members       = [var.storage_bucket_agent_binding]
   depends_on    = [google_kms_crypto_key.storage_crypto_key]
 }
 

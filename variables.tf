@@ -692,3 +692,13 @@ variable "encrypter_decrypter_role" {
   description = "The role for the encrypter decrypter"
   type        = string
 }
+
+variable "webapp_instance_service_agent_binding" {
+  description = "The service agent for the webapp instance"
+  type        = string
+}
+
+variable "storage_bucket_agent_binding" {
+  description = "The service agent for the storage bucket"
+  type        = string
+}
