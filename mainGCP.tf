@@ -303,6 +303,9 @@ resource "google_compute_region_instance_template" "webapp_vm_instance" {
     boot         = var.instance_template_name_boot
     disk_type    = var.instance_image_type
     disk_size_gb = var.instance_image_disk_size
+    disk_encryption_key {
+      kms_key_self_link = google_kms_crypto_key.webapp_crypto_key.id
+    }
   }
 
   reservation_affinity {
@@ -331,7 +334,7 @@ resource "google_compute_region_instance_template" "webapp_vm_instance" {
   }
 
   tags       = var.vm_firewall_target_tags
-  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.loadbalancer_firewall]
+  depends_on = [google_compute_subnetwork.webapp, google_compute_firewall.webapp_firewall, google_compute_firewall.webapp_deny_firewall, google_sql_database_instance.postgres_db, google_sql_user.users, google_project_iam_binding.logging_admin_for_service_account, google_project_iam_binding.monitoring_metric_writer_for_service_account, google_pubsub_topic.verify_topic, google_pubsub_subscription.verify_email_subscription, google_vpc_access_connector.serverless_connector, google_compute_firewall.loadbalancer_firewall, google_kms_crypto_key.webapp_crypto_key]
 
   metadata = {
     startup-script = <<-EOT
@@ -579,4 +582,19 @@ resource "google_dns_record_set" "webapp_dns" {
 resource "google_kms_key_ring" "application_key_ring" {
   name     = var.kms_key_ring_name
   location = var.gcp_project_region
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key
+# Generating a key ring for webapp
+
+resource "google_kms_crypto_key" "webapp_crypto_key" {
+  name            = var.crypto_key_name_webapp
+  key_ring        = google_kms_key_ring.application_key_ring.id
+  rotation_period = var.kms_crypto_key_rotation_period
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on      = [google_kms_key_ring.application_key_ring]
 }

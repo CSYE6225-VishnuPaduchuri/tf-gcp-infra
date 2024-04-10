@@ -652,3 +652,13 @@ variable "kms_key_ring_name" {
   description = "value of the key ring name"
   type        = string
 }
+
+variable "crypto_key_name_webapp" {
+  description = "The name of the crypto key for webapp"
+  type        = string
+}
+
+variable "kms_crypto_key_rotation_period" {
+  description = "The rotation period for the crypto key"
+  type        = string
+}
