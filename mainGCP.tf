@@ -398,8 +398,8 @@ resource "google_cloudfunctions2_function" "serverless-v2" {
     }
     source {
       storage_source {
-        bucket = var.serverless_cloud_function.bucket_source
-        object = var.serverless_cloud_function.object_source
+        bucket = google_storage_bucket.serverless_bucket.name
+        object = google_storage_bucket_object.serverless_object.name
       }
     }
   }
@@ -435,7 +435,7 @@ resource "google_cloudfunctions2_function" "serverless-v2" {
     service_account_email = google_service_account.service_account.email
   }
 
-  depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_region_instance_template.webapp_vm_instance]
+  depends_on = [google_sql_database_instance.postgres_db, google_pubsub_topic.verify_topic, google_compute_region_instance_template.webapp_vm_instance, google_storage_bucket.serverless_bucket, google_storage_bucket_object.serverless_object]
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_managed_ssl_certificate
@@ -613,4 +613,20 @@ resource "google_kms_crypto_key" "sql_crypto_key" {
   }
 
   depends_on = [google_kms_key_ring.application_key_ring]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket#example-usage---enabling-public-access-prevention
+resource "google_storage_bucket" "serverless_bucket" {
+  name          = var.serverless_cloud_function.bucket_source
+  location      = var.gcp_project_region
+  force_destroy = true
+
+  public_access_prevention = var.serverless_bucket_public_access_prevention
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object
+resource "google_storage_bucket_object" "serverless_object" {
+  name   = var.serverless_cloud_function.object_source
+  bucket = google_storage_bucket.serverless_bucket.name
+  source = var.serverless_object_source
 }
