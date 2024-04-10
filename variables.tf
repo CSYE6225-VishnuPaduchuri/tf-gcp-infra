@@ -682,3 +682,8 @@ variable "storage_crypto_key_name" {
   description = "The name of the crypto key for the storage bucket"
   type        = string
 }
+
+variable "sql_service_account_service_name" {
+  description = "The service name for the SQL service account"
+  type        = string
+}
