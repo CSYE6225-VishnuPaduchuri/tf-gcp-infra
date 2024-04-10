@@ -662,3 +662,8 @@ variable "kms_crypto_key_rotation_period" {
   description = "The rotation period for the crypto key"
   type        = string
 }
+
+variable "sql_crypto_key_name" {
+  description = "The name of the crypto key for the SQL DB"
+  type        = string
+}

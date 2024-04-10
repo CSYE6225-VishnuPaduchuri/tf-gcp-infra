@@ -72,6 +72,7 @@ resource "google_sql_database_instance" "postgres_db" {
   database_version    = var.google_sql_database_instance_database_version
   deletion_protection = var.google_sql_database_instance_deletion_policy
   depends_on          = [google_service_networking_connection.private_connection_for_vpc, google_pubsub_subscription.verify_email_subscription, google_pubsub_topic_iam_binding.topic_binding]
+  encryption_key_name = google_kms_crypto_key.sql_crypto_key.id
 
   settings {
     tier              = var.google_sql_database_instance_tier
@@ -585,7 +586,7 @@ resource "google_kms_key_ring" "application_key_ring" {
 }
 
 # Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key
-# Generating a key ring for webapp
+# Generating CMEK for webapp Instance
 
 resource "google_kms_crypto_key" "webapp_crypto_key" {
   name            = var.crypto_key_name_webapp
@@ -596,5 +597,20 @@ resource "google_kms_crypto_key" "webapp_crypto_key" {
     prevent_destroy = true
   }
 
-  depends_on      = [google_kms_key_ring.application_key_ring]
+  depends_on = [google_kms_key_ring.application_key_ring]
+}
+
+# Reference taken from https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/kms_crypto_key
+# Generating CMEK for SQL Instance
+
+resource "google_kms_crypto_key" "sql_crypto_key" {
+  name            = var.sql_crypto_key_name
+  key_ring        = google_kms_key_ring.application_key_ring.id
+  rotation_period = var.kms_crypto_key_rotation_period
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  depends_on = [google_kms_key_ring.application_key_ring]
 }
