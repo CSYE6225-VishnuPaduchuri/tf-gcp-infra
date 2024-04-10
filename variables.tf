@@ -677,3 +677,8 @@ variable "serverless_object_source" {
   description = "The object source for the serverless bucket"
   type        = string
 }
+
+variable "storage_crypto_key_name" {
+  description = "The name of the crypto key for the storage bucket"
+  type        = string
+}
